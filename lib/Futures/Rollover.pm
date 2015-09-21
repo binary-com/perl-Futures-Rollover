@@ -118,6 +118,7 @@ sub get_expiration_epoch {
 
         $dt = Date::Utility->new("201" . $year . "-" . $month_number . "-1");
         $dt = $dt->minus_time_interval("1d");
+        
         #find the last trading day of this month
         while (exists $exchange_holidays->{$dt->epoch} || $dt->day_of_week == 6 || $dt->day_of_week == 0) {
             $dt = $dt->minus_time_interval("1d");
