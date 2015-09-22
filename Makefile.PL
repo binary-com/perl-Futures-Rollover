@@ -5,7 +5,7 @@ use ExtUtils::MakeMaker;
 
 WriteMakefile(
     NAME             => 'Futures::Rollover',
-    AUTHOR           => q{Mahdi Mohammadinasab <support@binary.com>},
+    AUTHOR           => q{Binary.com <support@binary.com>},
     VERSION_FROM     => 'lib/Futures/Rollover.pm',
     ABSTRACT_FROM    => 'lib/Futures/Rollover.pm',
     LICENSE          => 'artistic_2',

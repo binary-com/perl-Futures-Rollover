@@ -114,9 +114,14 @@ sub get_expiration_epoch {
     #STI and HSI: The day before the last trading day day
     if ($symbol eq 'HSI' || $symbol eq 'ST') {
         $month_number++;
-        $month_number = 1 if $month_number == 13;
 
-        $dt = Date::Utility->new("201" . $year . "-" . $month_number . "-1");
+        if ( $month_number == 13 ) {
+            $dt = Date::Utility->new("201" . ($year+1) . "-1-1");
+        } else {
+            $dt = Date::Utility->new("201" . $year . "-" . $month_number . "-1");
+        }
+
+
         $dt = $dt->minus_time_interval("1d");
         
         #find the last trading day of this month
