@@ -1,4 +1,6 @@
+.travis.yml
 Changes
+Futures-Rollover-0.01.tar.gz
 ignore.txt
 lib/Futures/Rollover.pm
 LICENSE

@@ -1,4 +1,4 @@
-use 5.14;
+use 5.014;
 use strict;
 use warnings;
 use ExtUtils::MakeMaker;
@@ -16,9 +16,11 @@ WriteMakefile(
     },
     BUILD_REQUIRES => {
         'Test::More' => 0,
+        'Test::Exception' => 0,
+        'Date::Utility' => 1.01,
     },
     PREREQ_PM => {
-        Date::Utility => 1.01,
+        'Date::Utility' => 1.01,
     },
     dist  => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },
     clean => { FILES => 'Futures-Rollover-*' },
