@@ -3,6 +3,7 @@ package Futures::Rollover;
 use 5.006;
 use strict;
 use warnings;
+use Carp;
 use base qw( Exporter );
 our @EXPORT_OK = qw ( get_expiration_epoch get_previous_contract_code);
 
@@ -63,12 +64,16 @@ my %month_letters = (
     'Z' => 12,
 );
 
+my %r_month_letters = reverse %month_letters;
+
 sub get_previous_contract_code {
     my ($symbol, $month_y) = @_;
 
     #for example if we are given "SP H5" where SP is symbol and H5 is month-year we will return Z4
-    my ($month, $year) = $month_y =~ /^(.)(.)$/;
-    my $month_number = $month_letters{$month};
+    my ($month, $year) = $month_y =~ /^(.)(.)$/ or croak "Invalid month/year format";
+    my $month_number = $month_letters{$month} or croak "Invalid month letter";
+
+    $year =~ /^(\d)$/ or croak "Invalid year";
 
     #FTSE and DJI futures are renewed each 3 months
     if ($symbol eq 'Z' || $symbol eq 'YM') {
@@ -82,7 +87,6 @@ sub get_previous_contract_code {
         $year--;
     }
 
-    my %r_month_letters = reverse %month_letters;
     return $r_month_letters{$month_number} . $year;
 }
 
@@ -143,6 +147,8 @@ sub get_expiration_epoch {
         ($target_count, $target_dow) = (3, 5) if $symbol eq 'YM';     #DJI: 3rd Fri
         ($target_count, $target_dow) = (3, 5) if $symbol eq 'FCE';    #FCHI: 3rd Fri
         ($target_count, $target_dow) = (3, 5) if $symbol eq 'Z';      #FTSE: 3rd Fri
+
+        croak "Invalid symbol" if $target_count == 0;
 
         $dt = get_nth_day_of_week("201" . $year, $month_number, $target_count, $target_dow);
     }
