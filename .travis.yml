@@ -9,7 +9,7 @@ services:
 before_install:
     - "cpanm JSON"
     - "cpanm DateTime"
-    - "cpanm DateTime::Utility"
+    - "cpanm Date::Utility"
     - "cpanm Test::FailWarnings"
     - "cpanm Test::Most"
     - "cpanm Devel::Cover::Report::Coveralls"
