@@ -37,10 +37,11 @@ This module provides two methods:
 
 # Examples
 
+```perl
 my $prev_code = get_previous_contract_code("BSX", "U5");
 #prev_code should be M5
 
 my $expiration_epoch = get_expiration_epoch("ST", "X5");
 #expiration_epoch should be 2015-11-27 23:59:59 GMT
-
+```
 
