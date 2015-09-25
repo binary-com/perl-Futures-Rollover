@@ -7,12 +7,13 @@ use Test::Exception;
 use Futures::Rollover qw(get_expiration_epoch get_previous_contract_code);
 use Date::Utility;
 
-plan tests => 18;
+plan tests => 19;
 
 is get_previous_contract_code("Z", "U5"), "M5", "Previous contract code for Z-U5 calculated correctly";
 is get_previous_contract_code("BSX", "Q5"), "N5", "Previous contract code for BSX-U5 calculated correctly";
 is get_previous_contract_code("YM", "H6"), "Z5", "Previous contract code for YM-U5 calculated correctly";
 is get_previous_contract_code("YM", "Z5"), "U5", "Previous contract code for YM-U5 calculated correctly";
+is get_previous_contract_code("YM", "Z18"), "U18", "Previous contract code for YM-U5 calculated correctly";
 
 dies_ok { get_previous_contract_code("YM", "A5") } "Correctly failing for invalid month name";
 dies_ok { get_previous_contract_code("YM", "ZZ") } "Correctly failing for invalid year";

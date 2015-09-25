@@ -70,10 +70,8 @@ sub get_previous_contract_code {
     my ($symbol, $month_y) = @_;
 
     #for example if we are given "SP H5" where SP is symbol and H5 is month-year we will return Z4
-    my ($month, $year) = $month_y =~ /^(.)(.)$/ or croak "Invalid month/year format";
+    my ($month, $year) = $month_y =~ /^(.)(\d{1,2})$/ or croak "Invalid month/year format";
     my $month_number = $month_letters{$month} or croak "Invalid month letter";
-
-    $year =~ /^(\d)$/ or croak "Invalid year";
 
     #FTSE and DJI futures are renewed each 3 months
     if ($symbol eq 'Z' || $symbol eq 'YM') {
@@ -90,41 +88,59 @@ sub get_previous_contract_code {
     return $r_month_letters{$month_number} . $year;
 }
 
-sub get_nth_day_of_week {
-    my ($year, $month, $nth, $dow) = @_;
-    return if $nth == 0 or $dow == 0;
-    my $dt = Date::Utility->new($year . "-" . $month . "-1");
-
-    my $count_seen = 0;
-    for (my $i = 0; $i <= 31; $i++) {
-        $count_seen++ if $dt->day_of_week == $dow and $dt->month == $month;
-        last if $count_seen == $nth;
-
-        $dt = $dt->plus_time_interval('1d');
-    }
-
-    #return empty result if not enough day-of-weeks exist in the given month
-    return if $count_seen < $nth;
-    return $dt;
-}
+#sub get_nth_day_of_week {
+#    my ($year, $month, $nth, $dow) = @_;
+#    use Time::Local qw/timegm/;
+#
+#    $dow %= 7;     # accept both 0 and 7 as Sunday
+#    my $time = timegm(0, 0, 0, 1, $month - 1, $year - 1900);
+#    my $_dow = (gmtime $time)[6];    # 0 - Sun .. 6 - Sat
+#    my $days_add = ($dow + 7 - $_dow) % 7 + ($nth - 1) * 7;
+#
+#    my $result = Date::Utility->new($time + 24 * 3600 * $days_add);
+#
+#    return unless $result->month == $month;
+#    return $result;
+#
+#    #
+#    #
+#    #                        return if $nth == 0 or $dow == 0;
+#    #                        
+#    #    my $dt = Date::Utility->new($year . "-" . $month . "-1");
+#    #
+#    #    my $count_seen = 0;
+#    #    for (my $i = 0; $i <= 31; $i++) {
+#    #        $count_seen++ if $dt->day_of_week == $dow and $dt->month == $month;
+#    #        last if $count_seen == $nth;
+#    #
+#    #        $dt = $dt->plus_time_interval('1d');
+#    #    }
+#    #
+#    #    #return empty result if not enough day-of-weeks exist in the given month
+#    #    return if $count_seen < $nth;
+#    #    return $dt;
+#}
 
 sub get_expiration_epoch {
     my ($symbol, $month_y, $exchange_holidays) = @_;
 
-    my ($month, $year) = $month_y =~ /^(.)(.)$/;
+    #according to eSignal KB year is one digit for dates < 2018 and 18,19,20, ... for afterwards
+    my ($month, $year) = $month_y =~ /^(.)(\d{1,2})$/ or croak "Invalid month/year code";
     my $month_number = $month_letters{$month};
     my $dt;
+
+    $year += 10 if $year < 18; 
+    $year = 2000 + $year;
 
     #STI and HSI: The day before the last trading day day
     if ($symbol eq 'HSI' || $symbol eq 'ST') {
         $month_number++;
 
         if ( $month_number == 13 ) {
-            $dt = Date::Utility->new("201" . ($year+1) . "-1-1");
+            $dt = Date::Utility->new(($year+1) . "-1-1");
         } else {
-            $dt = Date::Utility->new("201" . $year . "-" . $month_number . "-1");
+            $dt = Date::Utility->new($year . "-" . $month_number . "-1");
         }
-
 
         $dt = $dt->minus_time_interval("1d");
         
@@ -134,23 +150,24 @@ sub get_expiration_epoch {
         }
         $dt = $dt->minus_time_interval("1d");
     } elsif ($symbol eq 'BSX') {    #for BSESENSEX30 it is last Thu of the month
-        $dt = get_nth_day_of_week("201" . $year, $month_number, 5, 4);
-        $dt = get_nth_day_of_week("201" . $year, $month_number, 4, 4) if not defined $dt;
+        $dt = Date::Utility->new($year . "-" . $month_number . "-1");
+
+        $dt = $dt->get_nth_day_of_week(5, 'Thu') // $dt->get_nth_day_of_week(4, 'Thu');
     } else {
         my $target_count = 0;       #nth occurence
         my $target_dow   = 0;       #nth day of week
 
         #dow counting for Date::Utility: sunday is 0
-        ($target_count, $target_dow) = (3, 5) if $symbol eq 'AEX';    #AEX: 3rd Fri
-        ($target_count, $target_dow) = (3, 4) if $symbol eq 'APS';    #AS51: 3rd Thu
-        ($target_count, $target_dow) = (3, 5) if $symbol eq 'BXF';    #BFX: 3rd Fri
-        ($target_count, $target_dow) = (3, 5) if $symbol eq 'YM';     #DJI: 3rd Fri
-        ($target_count, $target_dow) = (3, 5) if $symbol eq 'FCE';    #FCHI: 3rd Fri
-        ($target_count, $target_dow) = (3, 5) if $symbol eq 'Z';      #FTSE: 3rd Fri
+        ($target_count, $target_dow) = (3, 'Fri') if $symbol eq 'AEX';    #AEX: 3rd Fri
+        ($target_count, $target_dow) = (3, 'Thu') if $symbol eq 'APS';    #AS51: 3rd Thu
+        ($target_count, $target_dow) = (3, 'Fri') if $symbol eq 'BXF';    #BFX: 3rd Fri
+        ($target_count, $target_dow) = (3, 'Fri') if $symbol eq 'YM';     #DJI: 3rd Fri
+        ($target_count, $target_dow) = (3, 'Fri') if $symbol eq 'FCE';    #FCHI: 3rd Fri
+        ($target_count, $target_dow) = (3, 'Fri') if $symbol eq 'Z';      #FTSE: 3rd Fri
 
         croak "Invalid symbol" if $target_count == 0;
-
-        $dt = get_nth_day_of_week("201" . $year, $month_number, $target_count, $target_dow);
+        $dt = Date::Utility->new($year . "-" . $month_number . "-1");
+        $dt = $dt->get_nth_day_of_week($target_count, $target_dow);
     }
 
     return if not defined $dt;
