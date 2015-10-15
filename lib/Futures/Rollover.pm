@@ -5,14 +5,14 @@ use strict;
 use warnings;
 use Carp;
 use base qw( Exporter );
-our @EXPORT_OK = qw ( get_expiration_epoch get_previous_contract_code);
+our @EXPORT_OK = qw ( is_tick_fit_for_generic_feed );
 
 
 use Date::Utility;
 
 =head1 NAME
 
-Futures::Rollover - The great new Futures::Rollover!
+Futures::Rollover - Helper methods for future feed switching and generation
 
 =head1 VERSION
 
@@ -25,37 +25,39 @@ our $VERSION = '0.01';
 
 =head1 SYNOPSIS
 
-Quick summary of what the module does.
-
-Perhaps a little code snippet.
-
-    use Futures::Rollover;
-
-    my $foo = Futures::Rollover->new();
-    ...
+Feed listeners can use this module to decide whether the present tick 
+can be stored as a generic future feed or no.
 
 =head1 EXPORT
 
-get_expiration_epoch
+is_tick_fit_for_generic_feed 
 
 =head1 SUBROUTINES/METHODS
 
-=head2 get_expiration_epoch
+=head2 is_tick_fit_for_generic_feed
 
-This method calculates the epoch for expiration of a given future contract.
-Inputs are symbol and month_y. symbol is the name of the future contract instrument (e.g. Z means FTSE)
-month_y is month code and one digit year ( e.g. U5 means September 2015)
+This methods returns 1 if the given tick's information are good to be stored
+for generic future, 0 otherwise.
 
 =cut
 
 sub is_tick_fit_for_generic_feed {
     my ($symbol, $tick_epoch, $current_feed_expiry_date) = @_;
 
-    my $tick_day = Date::Utility->new($tick_epoch)->datetime_ddmmyy;
+    #all inputs are required
+    return 0 unless defined $symbol and defined $tick_epoch and defined $current_feed_expiry_date;
 
+    my $tick_date = Date::Utility->new($tick_epoch);
+    my $tick_day = $tick_date->day_of_month.$tick_date->month.$tick_date->year;
+
+    #if the tick is for _1 (1! or current future feed) and we are NOT
+    #at the day of expiry, then it can be stored for generic future feed
     if ( $symbol =~ /_1$/ && $tick_day ne $current_feed_expiry_date ) {
         return 1;
     } elsif ( $symbol =~ /_2$/ && $tick_day eq $current_feed_expiry_date ) {
+        #if tick is for _2 feed and we are at the day of expiry of 
+        #corresponding _1 future feed, then use this one as generic future
+        # (as in this single day, the _1 feed does not have good quality)
         return 1;
     }
    
