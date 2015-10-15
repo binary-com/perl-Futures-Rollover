@@ -48,7 +48,7 @@ sub is_tick_fit_for_generic_feed {
     return 0 unless defined $symbol and defined $tick_epoch and defined $current_feed_expiry_date;
 
     my $tick_date = Date::Utility->new($tick_epoch);
-    my $tick_day = $tick_date->day_of_month.$tick_date->month.$tick_date->year;
+    my $tick_day = $tick_date->day_of_month.$tick_date->month.$tick_date->year; 
 
     #if the tick is for _1 (1! or current future feed) and we are NOT
     #at the day of expiry, then it can be stored for generic future feed
