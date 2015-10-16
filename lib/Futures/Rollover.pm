@@ -7,7 +7,6 @@ use Carp;
 use base qw( Exporter );
 our @EXPORT_OK = qw ( is_tick_fit_for_generic_feed );
 
-
 use Date::Utility;
 
 =head1 NAME
@@ -21,7 +20,6 @@ Version 0.01
 =cut
 
 our $VERSION = '0.01';
-
 
 =head1 SYNOPSIS
 
@@ -48,19 +46,19 @@ sub is_tick_fit_for_generic_feed {
     return 0 unless defined $symbol and defined $tick_epoch and defined $current_feed_expiry_date;
 
     my $tick_date = Date::Utility->new($tick_epoch);
-    my $tick_day = $tick_date->day_of_month.$tick_date->month.$tick_date->year; 
+    my $tick_day = sprintf("%02d", $tick_date->month) . sprintf("%02d", $tick_date->day_of_month) . $tick_date->year;
 
     #if the tick is for _1 (1! or current future feed) and we are NOT
     #at the day of expiry, then it can be stored for generic future feed
-    if ( $symbol =~ /_1$/ && $tick_day ne $current_feed_expiry_date ) {
+    if ($symbol =~ /_1$/ && $tick_day ne $current_feed_expiry_date) {
         return 1;
-    } elsif ( $symbol =~ /_2$/ && $tick_day eq $current_feed_expiry_date ) {
-        #if tick is for _2 feed and we are at the day of expiry of 
+    } elsif ($symbol =~ /_2$/ && $tick_day eq $current_feed_expiry_date) {
+        #if tick is for _2 feed and we are at the day of expiry of
         #corresponding _1 future feed, then use this one as generic future
         # (as in this single day, the _1 feed does not have good quality)
         return 1;
     }
-   
+
     #return 0 if this tick is not good for generic future feed
     return 0;
 }
@@ -154,4 +152,4 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 =cut
 
-1; # End of Futures::Rollover
+1;    # End of Futures::Rollover

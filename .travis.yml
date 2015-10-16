@@ -10,6 +10,5 @@ before_install:
     - "cpanm Test::FailWarnings"
     - "cpanm Test::Most"
     - "cpanm Test::Exception"
-    - "cpanm Devel::Cover::Report::Coveralls"
 script:
-  perl Makefile.PL && make test && cover -test -report coveralls
+  perl Makefile.PL && make test
