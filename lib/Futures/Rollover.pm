@@ -5,13 +5,13 @@ use strict;
 use warnings;
 use Carp;
 use base qw( Exporter );
-our @EXPORT_OK = qw ( is_tick_fit_for_generic_feed );
+our @EXPORT_OK = qw ( get_feed_index_for_generic_future );
 
 use Date::Utility;
 
 =head1 NAME
 
-Futures::Rollover - Helper methods for future feed switching and generation
+Futures::Rollover - Helper methods for Future feed switching and generation
 
 =head1 VERSION
 
@@ -23,44 +23,47 @@ our $VERSION = '0.01';
 
 =head1 SYNOPSIS
 
-Feed listeners can use this module to decide whether the present tick 
-can be stored as a generic future feed or no.
+Feed listeners can use this module to decide whether the current or front feed needs to be
+stored as the generic Future feed.
 
 =head1 EXPORT
 
-is_tick_fit_for_generic_feed 
+get_feed_index_for_generic_future
 
 =head1 SUBROUTINES/METHODS
 
-=head2 is_tick_fit_for_generic_feed
+=head2 get_feed_index_for_generic_future
 
-This methods returns 1 if the given tick's information are good to be stored
-for generic future, 0 otherwise.
+This method returns index of the Future feed that can go to the generic Future feed according to roll-over rules.
+A Generic Future feed is a combination of two Future feeds, which are called current and front. Current Future feed
+is the currently active Future contract that will expire first. The Front Future is the next expiring Future contract.
+The rule is that, Generic Future will contains all data from "Current Future" unless on the day of expiry. On that
+specific day we will switch to "Front". After the day of expiry (upon which, the Current Future will be expired), 
+Front Future will be published under the Current Future name and a new contract will be created and published as
+Front Future, this switching is called Roll-over.
+
+Input: $tick_tpoch (current time), $current_feed_expiry_day (expiry date of the current Future feed in the format of yyyymmdd)
+Output: 1 (if the current feed should be used in generic Future feed creation), 2 (if front feed should be used for generic feed), 0 (wrong input or unknown situation)
 
 =cut
 
-sub is_tick_fit_for_generic_feed {
-    my ($symbol, $tick_epoch, $current_feed_expiry_date) = @_;
+sub get_feed_index_for_generic_future {
+    my ($tick_epoch, $current_feed_expiry_day) = @_;
 
     #all inputs are required
-    return 0 unless defined $symbol and defined $tick_epoch and defined $current_feed_expiry_date;
+    return unless defined $tick_epoch and defined $current_feed_expiry_day;
 
-    my $tick_date = Date::Utility->new($tick_epoch);
-    my $tick_day = sprintf("%02d", $tick_date->month) . sprintf("%02d", $tick_date->day_of_month) . $tick_date->year;
+    my ($day, $month, $year) = (localtime($tick_epoch))[3, 4, 5];
+    $year += 1900;
+    $month++;
 
-    #if the tick is for _1 (1! or current future feed) and we are NOT
-    #at the day of expiry, then it can be stored for generic future feed
-    if ($symbol =~ /_1$/ && $tick_day ne $current_feed_expiry_date) {
-        return 1;
-    } elsif ($symbol =~ /_2$/ && $tick_day eq $current_feed_expiry_date) {
-        #if tick is for _2 feed and we are at the day of expiry of
-        #corresponding _1 future feed, then use this one as generic future
-        # (as in this single day, the _1 feed does not have good quality)
-        return 1;
-    }
+    my $tick_day = $year . sprintf("%02d", $month) . sprintf("%02d", $day);
 
-    #return 0 if this tick is not good for generic future feed
-    return 0;
+    return 2 if $tick_day == $current_feed_expiry_day;
+    return 1 if $tick_day < $current_feed_expiry_day;
+
+    #unknown situation - return nothing
+    return;
 }
 
 =head1 AUTHOR
@@ -72,9 +75,6 @@ Binary.com , C<< <support at binary.com> >>
 Please report any bugs or feature requests to C<bug-futures-rollover at rt.cpan.org>, or through
 the web interface at L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Futures-Rollover>.  I will be notified, and then you'll
 automatically be notified of progress on your bug as I make changes.
-
-
-
 
 =head1 SUPPORT
 

@@ -3,12 +3,9 @@ perl:
     - "5.18"
     - "5.16"
     - "5.14"
-services:
-    - redis-server
 before_install:
     - "cpanm Date::Utility"
-    - "cpanm Test::FailWarnings"
-    - "cpanm Test::Most"
+    - "cpanm Test::More"
     - "cpanm Test::Exception"
 script:
   perl Makefile.PL && make test
