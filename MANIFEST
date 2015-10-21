@@ -1,5 +1,4 @@
 .travis.yml
-Changes
 ignore.txt
 lib/Futures/Rollover.pm
 Makefile.PL
