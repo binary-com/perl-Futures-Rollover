@@ -1,0 +1,11 @@
+language: perl
+perl:
+    - "5.18"
+    - "5.16"
+    - "5.14"
+before_install:
+    - "cpanm Date::Utility"
+    - "cpanm Test::More"
+    - "cpanm Test::Exception"
+script:
+  perl Makefile.PL && make test
